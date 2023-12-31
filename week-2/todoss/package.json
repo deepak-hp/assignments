@@ -1,0 +1,24 @@
+{
+  "name": "todoss",
+  "version": "1.0.0",
+  "description": "a nodejs project to store todos",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "nodejs",
+    "javascript",
+    "apis",
+    "rest"
+  ],
+  "author": "Deepak HP",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

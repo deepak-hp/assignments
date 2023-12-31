@@ -2,25 +2,166 @@
 <html>
 
 <head>
-  <script>
+  <style>
+    body {
+      background-color: #FFF8F0;
+    }
+
+    .titleInput,
+    .descInput {
+      border: none;
+      border-radius: 4px;
+      height: 24px;
+      background-color: #FF8811;
+      color: #fff8f0;
+      padding: 8px;
+      width: 40%;
+      font-size: 14px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .titleInput::placeholder,
+    .descInput::placeholder {
+      color: #fff8f0;
+      font-size: 14px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .addTodoBtn {
+      all: unset;
+      background-color: #392F5A;
+      color: #F4D06F;
+      padding: 12px 16px;
+      border-radius: 10em;
+      font-size: 14px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .status {
+      all: unset;
+      background-color: #FF8811;
+      color: #FFF8F0;
+      padding: 12px 16px;
+      border-radius: 10em;
+      font-size: 14px;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+    }
+
+    #todos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      background-color: #9DD9D2;
+      padding: 24px;
+      border-radius: 12px;
+    }
+
+    .todoContainer {
+      background-color: #392F5A;
+      width: max-content;
+      height: max-content;
+      padding: 16px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      justify-content: space-between;
+
+    }
+
+    .title {
+      font-size: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #FFF8F0;
+    }
+
+    .desc {
+      font-size: 14px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #FF8811;
+      padding-bottom: 12px;
+    }
+  </style>
+  <script defer>
     let globalId = 1;
     let todoState = [];
     let oldTodoState = [];
 
-    function addTodoToDom() {
-      
+    function updateStatus(id) {
+      const newTodos = [...oldTodoState]
+      const todoIndex = newTodos.findIndex(todo => todo.id === id)
+      newTodos[todoIndex] = { ...newTodos[todoIndex], completed: !newTodos[todoIndex].completed }
+      updateState(newTodos)
+    }
+
+    function addTodoToDom(todo) {
+      console.log("here");
+
+      const todos = document.getElementById("todos");
+
+      const newtodo = document.createElement("div");
+      newtodo.setAttribute("id", todo.id)
+      newtodo.setAttribute("class", "todoContainer")
+
+      const title = document.createElement("div")
+      title.setAttribute("id", `${todo.id}_title`)
+      title.setAttribute("class", `title`)
+      title.innerHTML = todo.title;
+
+      const desc = document.createElement("div")
+      desc.setAttribute("id", `${todo.id}_desc`)
+      desc.setAttribute("class", `desc`)
+      desc.innerHTML = todo.description;
+
+      const status = document.createElement("button");
+      status.setAttribute("id", `${todo.id}_status`)
+      status.setAttribute("class", `status`)
+      status.setAttribute("onclick", `updateStatus(${todo.id})`)
+      status.innerHTML = todo.completed ? "Done" : "Mark as Done";
+
+      newtodo.appendChild(title)
+      newtodo.appendChild(desc)
+      newtodo.appendChild(status)
+
+      todos.appendChild(newtodo)
     }
 
     function removeTodoFromDom(todo) {
-      
+      const existingTodo = document.getElementById(todo.id);
+      existingTodo.parentElement.removeChild(todo)
     }
 
     function updateTodoInDom(oldTodo, newTodo) {
-        
+      const todo = document.getElementById(oldTodo.id);
+      todo.children[0].innerHTML = newTodo.title
+      todo.children[1].innerHTML = newTodo.description;
+      todo.children[2].innerHTML = newTodo.completed ? "Done" : "Mark as Done"
     }
 
     function updateState(newTodos) {
       // calculate the diff b/w newTodos and oldTodos.
+      let newTodoMap = new Map()
+      let oldTodoMap = new Map()
+
+      const populateTodosToMap = (todos, map) => {
+        todos.forEach(todo => {
+          if (!map.get(todo.id)) {
+            map.set(todo.id, todo)
+          }
+        });
+      }
+
+      if (newTodos.length) {
+        populateTodosToMap(newTodos, newTodoMap)
+      }
+
+      if (oldTodoState.length) {
+        populateTodosToMap(oldTodoState, oldTodoMap)
+      }
+
       // More specifically, find out what todos are - 
       // 1. added
       // 2. deleted
@@ -31,31 +172,73 @@
       // calculate these 3 arrays
       // call addTodo, removeTodo, updateTodo functions on each of the
       // elements
-      oldTodoState = newTodos;
+
+      oldTodoState.forEach(oldTodo => {
+        if (newTodoMap.has(oldTodo.id)) {
+          const newTodo = newTodoMap.get(oldTodo.id);
+          if (newTodo.title !== oldTodo.title || newTodo.description !== oldTodo.description || newTodo.completed !== oldTodo.completed) {
+            updated.push({ oldTodo, newTodo });
+          }
+        } else {
+          deleted.push(oldTodo)
+        }
+      })
+
+      // check for added
+      newTodos.forEach(todo => {
+        if (!oldTodoMap.has(todo.id)) {
+          added.push(todo)
+        }
+      })
+
+      if (added.length) {
+        added.forEach(todo => {
+          addTodoToDom(todo)
+        })
+      }
+
+      if (updated.length) {
+        console.log(updated);
+        updated.forEach(todos => {
+          const { oldTodo, newTodo } = todos;
+          updateTodoInDom(oldTodo, newTodo)
+        })
+      }
+
+      if (deleted.length) {
+        deleted.forEach(todo => {
+          removeTodoFromDom(todo)
+        })
+      }
+      oldTodoState = [...newTodos];
     }
 
     function addTodo() {
-      const title = document.getElementById("title").value;
-      const description = document.getElementById("description").value;
+      const titleElement = document.getElementById("title");
+      const descriptionElement = document.getElementById("description");
+      const title = titleElement.value
+      const description = descriptionElement.value
       todoState.push({
         title: title,
         description: description,
         id: globalId++,
+        completed: false
       })
+      titleElement.value = ""
+      descriptionElement.value = ""
       updateState(todoState);
     }
   </script>
 </head>
 
 <body>
-  <input type="text" id="title" placeholder="Todo title"></input> <br /><br />
-  <input type="text" id="description" placeholder="Todo description"></input> <br /><br />
-  <button onclick="addTodo()">Add todo</button>
-  <br /> <br />
-
-  <div id="todos">
-
-  </div>
+  <center>
+    <input type="text" class="titleInput" id="title" placeholder="Todo title"></input> <br /><br />
+    <input type="text" class="descInput" id="description" placeholder="Todo description"></input> <br /><br />
+    <button class="addTodoBtn" onclick="addTodo()">Add todo</button>
+    <br /> <br />
+  </center>
+  <div id="todos"></div>
 </body>
 
 </html>
